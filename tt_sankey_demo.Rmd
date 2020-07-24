@@ -1,0 +1,117 @@
+---
+title: "tt_sankey_demo"
+author: "Ronnie Bailey-Steinitz"
+date: "7/21/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#### Attach packages
+```{r}
+library(dplyr)
+library(tidyverse)
+library(plyr)
+library(janitor)
+
+#DataVis
+library(ggplot2)
+library(ggalluvial)
+library(RColorBrewer)
+library(ggrepel)
+
+```
+
+
+#### Some wrangling
+```{r}
+
+unique(starwars$homeworld) #check how many levels you have for homeworlds
+unique(starwars$species) #check how many species 
+
+#there are 49 homeworlds, let's select the 10 worlds that are home to the most characters
+homes <- starwars %>% 
+  filter(homeworld != "NA") %>% 
+  filter(species != "NA") %>% 
+  group_by(homeworld, species) %>% 
+  dplyr::summarise(
+    count = n()
+  ) %>% 
+  arrange(-count) #largest number of species first
+
+homes_short <- unique(homes$homeworld)[1:10] #select top 10 (note that if you look at the homeworld column in "homes" object, there are repeat worlds in the top 10; so here we select 10 unique worlds. e.g., Naboo appears twice but we only want it once in the top-10-world list)
+
+#now let's filter the dataset to just the top-10 homeworlds:
+sw_short <- starwars %>% 
+  filter(homeworld %in% homes_short) %>% #only characters from our top-10 world list
+  filter(species != "NA") #filter NA's
+```
+
+
+### Plotting
+```{r}
+
+alluvial <- ggplot(sw_short, aes(y = homeworld, axis1 = homeworld, axis2 = species)) + #you can use more than 2 axes, just define "axis3 = ..."
+  geom_alluvium(aes(fill = species), #this determines which of the axes you are focusing
+                width = 1/4, #width of alluvial plot- use this to create more "padding" on either side for labels
+                knot.pos = 1/6, #where the "dip" in the alluvial wave is (with 1/2 the dip is close the the center of the diagram)
+                alpha = 0.75) +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum)), size = 3) +
+  geom_stratum(width = 1/4, color = "black", alpha = 0.3) + #the defining lines around each stratum chunk
+  scale_x_discrete(limits = c("Homeworld", "Species"), expand = c(0.1, 0.1)) + #determine where strata (stacks) is placed on x axis
+  labs(subtitle = "Distribution of Species in Homeworlds") +
+  ggtitle("Starwars Characters") +
+  scale_fill_brewer(palette = "RdGy") +
+  theme_light() +
+  
+  #remove y-axis labels and ticks, lines that are in the way:
+  theme(
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank()
+  )
+
+alluvial
+```
+
+
+#### Different label format - geom_label_repel
+```{r}
+alluvial2 <- ggplot(sw_short, aes(y = homeworld, axis1 = homeworld, axis2 = species)) + #you can use more than 2 axes, just define "axis3 = ..."
+  geom_alluvium(aes(fill = species), #this determines which of the axes you are focusing
+                width = 1/4, #width of entire plot- use this to create more "padding" on either side for labels
+                #aes.bind = "flow",
+                knot.pos = 1/6, #where the "dip" in the alluvial wave is (with 1/2 the dip is close the the center of the diagram)
+                alpha = 0.75) +
+  geom_stratum(width = 1/4, color = "black", alpha = 0.3) + #the defining lines around each stratum chunk
+  scale_x_discrete(limits = c("Homeworld", "Species"), expand = c(0.1, 0.1)) +
+  geom_label_repel(direction = "x", #repel extends in the "x" direction; you can also tell it to extend in the "y" direction
+                 force = 10, #the higher the number, the more each label box repels other label boxes = less overlap
+                 nudge_x = c(-0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2,
+                             0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2),
+                 # hjust = 0, #aligning text horizontally (justification)
+                 # vjust = 0.5, #aligning text vertically (justification)
+                 segment.size = 0.2, #the line attached to the label box
+                 segment.alpha = 0.8, #the line attached to the label box
+                 stat = "stratum",
+                 infer.label = TRUE, #label = value from df
+                 size = 2,
+                 color = "black", #line around label boxes
+                 fill = "white") + #fill of label boxes
+  labs(subtitle = "Distribution of Species in Homeworlds") +
+  ggtitle("Starwars Characters") +
+  scale_fill_brewer(palette = "RdGy") +
+  theme_light() +
+  theme(
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank())#remove y-axis labels and ticks, lines that are in the way
+
+alluvial2
+```
+
