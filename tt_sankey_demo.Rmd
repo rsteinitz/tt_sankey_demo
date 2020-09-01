@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 #### Attach packages
-```{r}
+```{r echo=FALSE, warning=FALSE, results=FALSE}
 library(dplyr)
 library(tidyverse)
 library(plyr)
@@ -19,15 +19,17 @@ library(janitor)
 
 #DataVis
 library(ggplot2)
-library(ggalluvial)
 library(RColorBrewer)
+
+#Sankey stuff
+library(ggalluvial)
 library(ggrepel)
 
 ```
 
 
 #### Some wrangling
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE, results=FALSE}
 
 unique(starwars$homeworld) #check how many levels you have for homeworlds
 unique(starwars$species) #check how many species 
@@ -51,19 +53,24 @@ sw_short <- starwars %>%
 ```
 
 
-### Plotting
 ```{r}
+alluvial0 <- ggplot(sw_short, aes(y = homeworld, axis1 = homeworld, axis2 = species)) + #you can use more than 2 axes, just define "axis3 = ..."
+  geom_alluvium(aes(fill = species)) #this determines which of the axes you are focusing
 
-alluvial <- ggplot(sw_short, aes(y = homeworld, axis1 = homeworld, axis2 = species)) + #you can use more than 2 axes, just define "axis3 = ..."
+
+alluvial0
+```
+
+
+### Plotting
+```{r echo=FALSE, message=FALSE, warning=FALSE, results=FALSE}
+
+alluvial1 <- ggplot(sw_short, aes(y = homeworld, axis1 = homeworld, axis2 = species)) + #you can use more than 2 axes, just define "axis3 = ..."
   geom_alluvium(aes(fill = species), #this determines which of the axes you are focusing
-                width = 1/4, #width of alluvial plot- use this to create more "padding" on either side for labels
-                knot.pos = 1/6, #where the "dip" in the alluvial wave is (with 1/2 the dip is close the the center of the diagram)
-                alpha = 0.75) +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum)), size = 3) +
+                width = 1/4) + #width of alluvial plot- use this to create more "padding" on either side for labels
   geom_stratum(width = 1/4, color = "black", alpha = 0.3) + #the defining lines around each stratum chunk
+  geom_text(stat = "stratum", aes(label = after_stat(stratum)), size = 3) + #puts labels within the columns (strata)
   scale_x_discrete(limits = c("Homeworld", "Species"), expand = c(0.1, 0.1)) + #determine where strata (stacks) is placed on x axis
-  labs(subtitle = "Distribution of Species in Homeworlds") +
-  ggtitle("Starwars Characters") +
   scale_fill_brewer(palette = "RdGy") +
   theme_light() +
   
@@ -75,12 +82,12 @@ alluvial <- ggplot(sw_short, aes(y = homeworld, axis1 = homeworld, axis2 = speci
   panel.grid.minor = element_blank()
   )
 
-alluvial
+alluvial1
 ```
 
 
 #### Different label format - geom_label_repel
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE, results=FALSE}
 alluvial2 <- ggplot(sw_short, aes(y = homeworld, axis1 = homeworld, axis2 = species)) + #you can use more than 2 axes, just define "axis3 = ..."
   geom_alluvium(aes(fill = species), #this determines which of the axes you are focusing
                 width = 1/4, #width of entire plot- use this to create more "padding" on either side for labels
